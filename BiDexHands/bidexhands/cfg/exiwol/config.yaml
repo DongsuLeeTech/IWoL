@@ -1,0 +1,90 @@
+env_name: exiwol
+algorithm_name: exiwol
+experiment_name: check
+run_dir: ./logs
+use_centralized_V: False
+use_obs_instead_of_state: False
+num_env_steps: 100000000
+episode_length: 8
+n_rollout_threads: 80
+n_eval_rollout_threads: 1
+use_linear_lr_decay: False
+hidden_size: 128
+use_render: False
+recurrent_N: 1
+use_single_network: False
+
+save_interval: 1
+use_eval: False
+eval_interval: 100
+log_interval: 10
+eval_episodes: 10
+
+gamma: 0.96
+gae_lambda: 0.95
+use_gae: True
+use_popart: False
+use_valuenorm: True
+use_proper_time_limits: False
+
+num_agents: 2
+kl_threshold: 0.016
+ls_step: 10
+accept_ratio: 0.5
+clip_param: 0.2
+ppo_epoch: 5
+num_mini_batch: 1
+data_chunk_length: 10
+value_loss_coef: 1
+entropy_coef: 0.01
+max_grad_norm: 10
+huber_delta: 10.0
+use_recurrent_policy: True
+use_naive_recurrent_policy: False
+use_max_grad_norm: True
+use_clipped_value_loss: True
+use_huber_loss: True
+use_value_active_masks: False
+use_policy_active_masks: False
+
+lr: 5.e-4
+critic_lr: 5.e-4
+opti_eps: 1.e-5
+weight_decay: 0.0
+
+gain: 0.01
+actor_gain: 0.01
+use_orthogonal: True
+
+use_feature_normalization: True
+use_ReLU: True
+stacked_frames: 1
+layer_N: 2
+
+std_x_coef: 1
+std_y_coef: 0.5
+
+gat_hidden_size: 128
+gat_num_heads: 4
+use_scheduler: True
+negative_slope: 0.2
+scheduler_head: 1
+
+code_size: 128
+obs_info_scheduler: rnn_enc
+pos_embed: True
+obs_pos_embed_start: 2
+obs_pos_embed_end: 28
+
+comm_num_heads: 4
+comm_hidden_size: 128
+num_comm_hops: 4
+comm_type: 1
+skip_connect_final: True
+mask_threshold: 0.5
+obs_enc_type: rnn
+use_vq_vae: True
+causal_masked: False
+fixed_masked: False
+
+world_dynamics_coef: 0.05
