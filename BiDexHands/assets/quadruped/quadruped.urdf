@@ -1,0 +1,324 @@
+<?xml version="1.0"?>
+<robot name="quadruped">
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size="0.5 0.3 0.1"/>
+            </geometry>
+            <material name="blue">
+                <color rgba="0 0 1 1"/>
+            </material>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.5 0.3 0.1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0"/>
+            <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+        </inertial>
+    </link>
+
+    <!-- Front left leg -->
+    <link name="fl_hip_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="fl_hip_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="fl_hip_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="fl_thigh_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="fl_thigh_joint" type="revolute">
+        <parent link="fl_hip_link"/>
+        <child link="fl_thigh_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="fl_calf_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="yellow"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="fl_calf_joint" type="revolute">
+        <parent link="fl_thigh_link"/>
+        <child link="fl_calf_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <!-- Front right leg -->
+    <link name="fr_hip_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="fr_hip_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="fr_hip_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="fr_thigh_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="fr_thigh_joint" type="revolute">
+        <parent link="fr_hip_link"/>
+        <child link="fr_thigh_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="fr_calf_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="yellow"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="fr_calf_joint" type="revolute">
+        <parent link="fr_thigh_link"/>
+        <child link="fr_calf_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <!-- Back left leg -->
+    <link name="bl_hip_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="bl_hip_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="bl_hip_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="bl_thigh_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="bl_thigh_joint" type="revolute">
+        <parent link="bl_hip_link"/>
+        <child link="bl_thigh_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="bl_calf_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="yellow"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="bl_calf_joint" type="revolute">
+        <parent link="bl_thigh_link"/>
+        <child link="bl_calf_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <!-- Back right leg -->
+    <link name="br_hip_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="br_hip_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="br_hip_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="br_thigh_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="br_thigh_joint" type="revolute">
+        <parent link="br_hip_link"/>
+        <child link="br_thigh_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="br_calf_link">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+            <material name="yellow"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.1 0.2"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+    </link>
+    <joint name="br_calf_joint" type="revolute">
+        <parent link="br_thigh_link"/>
+        <child link="br_calf_link"/>
+        <axis xyz="1 0 0"/>
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100"/>
+    </joint>
+
+    <material name="red">
+        <color rgba="1 0 0 1"/>
+    </material>
+    <material name="green">
+        <color rgba="0 1 0 1"/>
+    </material>
+    <material name="yellow">
+        <color rgba="1 1 0 1"/>
+    </material>
+</robot> 
