@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<robot name="t_block">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="1.5 0.5 0.5"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="blue">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="1.5 0.5 0.5"/>
+      </geometry>
+      <origin xyz="0 0 10" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="3.0"/>
+      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <link name="vertical_link">
+    <visual>
+      <geometry>
+        <box size="0.5 1.0 0.5"/>
+      </geometry>
+      <origin xyz="0 0.75 0" rpy=" 0 0 0"/>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.5 1.0 0.5"/>
+      </geometry>
+      <origin xyz="0 0.75 10" rpy=" 0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0.75 0" rpy=" 0 0 0"/>
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <joint name="fixed_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="vertical_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+</robot>
