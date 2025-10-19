@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from onpolicy.algorithms.r_mappo.algorithm.transformer_comm import Transformer_Comm
-from onpolicy.algorithms.r_mappo.algorithm.scheduler import Scheduler
+from onpolicy.algorithms.utils.transformer_comm import Transformer_Comm
+from onpolicy.algorithms.utils.scheduler import Scheduler
 from onpolicy.algorithms.utils.util import init, check
 from onpolicy.algorithms.utils.cnn import CNNBase
 from onpolicy.algorithms.utils.mlp import MLPBase

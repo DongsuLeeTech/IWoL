@@ -2,32 +2,29 @@
 import sys
 import os
 import wandb
-from datetime import datetime
 import socket
 import setproctitle
 import numpy as np
 from pathlib import Path
 import torch
+
 from onpolicy.config import get_config
-from onpolicy.envs.mpe.MPE_env import MPEEnv
-from onpolicy.envs.metadrive.MetaDrive_Env import MetaDriveEnv
-from onpolicy.envs.env_wrappers import SubprocVecEnv, DummyVecEnv
+from onpolicy.envs.robo_wrapper import Wrapper
+from onpolicy.envs.env_wrappers import *
 
-
-"""Train script for MetaDrive."""
 
 def make_train_env(all_args):
+    base_dir = os.path.dirname(__file__)
+    config_path = os.path.join(base_dir, f"../../envs/robotarium/scenarios/{all_args.scenario_name}/config.yaml")
+
     def get_env_fn(rank):
         def init_env():
-            if all_args.env_name == "MetaDrive":
-                env = MetaDriveEnv(all_args)
-            else:
-                print("Can not support the " +
-                      all_args.env_name + "environment.")
-                raise NotImplementedError
-            env.seed(all_args.seed + rank * 1000)
+            all_args.seed = all_args.seed + rank * 1000
+            env = Wrapper(all_args.scenario_name, config_path)
             return env
+
         return init_env
+
     if all_args.n_rollout_threads == 1:
         return DummyVecEnv([get_env_fn(0)])
     else:
@@ -35,61 +32,45 @@ def make_train_env(all_args):
 
 
 def make_eval_env(all_args):
+    base_dir = os.path.dirname(__file__)
+    config_path = os.path.join(base_dir, f"../../envs/robotarium/scenarios/{all_args.scenario_name}/config.yaml")
+
     def get_env_fn(rank):
         def init_env():
-            if all_args.env_name == "MetaDrive":
-                env = MetaDriveEnv(all_args)
-            else:
-                print("Can not support the " +
-                      all_args.env_name + "environment.")
-                raise NotImplementedError
-            env.seed(all_args.seed * 50000 + rank * 10000)
+            all_args.seed = all_args.seed * 50000 + rank * 10000
+            env = Wrapper(all_args.scenario_name, config_path)
             return env
+
         return init_env
+
     if all_args.n_eval_rollout_threads == 1:
         return DummyVecEnv([get_env_fn(0)])
     else:
-        return SubprocVecEnv([get_env_fn(i) for i in range(all_args.n_eval_rollout_threads)])
+        return SubprocVecEnv([get_env_fn(i) for i in range(all_args.n_rollout_threads)])
 
 
 def parse_args(args, parser):
-    parser.add_argument('--scenario_name', type=str,
-                        default='simple_spread', help="Which scenario to run on")
-    # parser.add_argument("--num_landmarks", type=int, default=3)
-    parser.add_argument('--num_agents', type=int,
-                        default=40, help="number of players")
-    # metadrive parameters
-    parser.add_argument("--use_render_metadrive", action='store_true', default=False, help="if use render for metadrive")
-    # parser.add_argument("--offscreen_render", action='store_true', default=False, help="off screen render for metadrive")
-    parser.add_argument("--meta_coop_reward", action='store_true', default=False, help="use fully cooperative reward for metadrive")
-    parser.add_argument("--meta_reward_coeff", type=float, default=1.0, help="the coefficient for individual reward vs. local reward (default: individual)")
-    parser.add_argument("--meta_global_pos", action='store_true', default=False, help="if add the global position in the observation")
-    parser.add_argument("--meta_lidar_num_lasers", type=int, default=72, help='lidar: number of lasers')
-    parser.add_argument("--meta_lidar_dist", type=float, default=40, help='lidar distance for metadrive vehicles')
-    parser.add_argument("--meta_lidar_num_others", type=int, default=0, help="the number of surrounding agents' info to acquire")
-    parser.add_argument("--meta_lidar_pt_cloud", action='store_true', default=False, help="include the lidar point cloud in the observation")
-    parser.add_argument("--meta_allow_respawn", action='store_true', default=False, help="allow respawn in metadrive")
-    parser.add_argument("--meta_navi_pos", action='store_true', default=False, help="if add the positions of navigation checkpoints to observation")
-    # metadrive parameters (communication related)
-    parser.add_argument('--meta_comm_range', type=float, default=20, help="the range (radius of a circle) of the communication")
-    parser.add_argument('--meta_comm_max_num', type=int, default=4, help="the maximum number of agents that one agent can communicate with (including itself)")
-    parser.add_argument('--meta_disable_steering', action='store_true', default=False, help='if disable the vehicle steering in the signal environment')
-    
+    parser.add_argument('--scenario_name', type=str, default='Simple', help="Which scenario to run on")
+
     all_args = parser.parse_known_args(args)[0]
 
     return all_args
+
 
 def main(args):
     parser = get_config()
     all_args = parse_args(args, parser)
 
-    print("u are choosing to use VoCAL, we set use_recurrent_policy to be True")
-    all_args.algorithm_name == "IICWL"
+    if all_args.scenario_name == "Warehouse":
+        all_args.num_agents = 6
+    elif all_args.scenario_name == "Simple":
+        all_args.num_agents = 4
+    else:
+        all_args.num_agents = 4
+
     all_args.use_recurrent_policy = True
     all_args.use_naive_recurrent_policy = False
 
-    assert (all_args.share_policy == True and all_args.scenario_name == 'simple_speaker_listener') == False, (
-        "The simple_speaker_listener scenario can not use shared policy. Please check the config.py.")
 
     # cuda
     if all_args.cuda and torch.cuda.is_available():
@@ -104,13 +85,12 @@ def main(args):
         device = torch.device("cpu")
         torch.set_num_threads(all_args.n_training_threads)
 
-    # run dir
     run_dir = Path(os.path.split(os.path.dirname(os.path.abspath(__file__)))[
-                   0] + "/results") / all_args.env_name / all_args.scenario_name / all_args.algorithm_name / all_args.experiment_name
+                       0] + "/results") / all_args.env_name / all_args.scenario_name / all_args.algorithm_name / all_args.experiment_name
     if not run_dir.exists():
         os.makedirs(str(run_dir))
 
-    # wandb
+    from datetime import datetime
     g_start_time = int(datetime.now().timestamp())
     exp_name = ''
     exp_name += f'sd{all_args.seed:03d}_n{all_args.num_agents}_'
@@ -121,14 +101,14 @@ def main(args):
         run = wandb.init(config=all_args,
                          project=all_args.wandb_project_name,
                          name=exp_name,
-                         group=all_args.wandb_group,
                          dir=str(run_dir),
                          reinit=True)
     else:
         if not run_dir.exists():
             curr_run = 'run1'
         else:
-            exst_run_nums = [int(str(folder.name).split('run')[1]) for folder in run_dir.iterdir() if str(folder.name).startswith('run')]
+            exst_run_nums = [int(str(folder.name).split('run')[1]) for folder in run_dir.iterdir() if
+                             str(folder.name).startswith('run')]
             if len(exst_run_nums) == 0:
                 curr_run = 'run1'
             else:
@@ -137,16 +117,16 @@ def main(args):
         if not run_dir.exists():
             os.makedirs(str(run_dir))
 
-    all_args.process_name = str(all_args.algorithm_name) + "-" + \
-        str(all_args.env_name) + "-" + str(all_args.scenario_name) + "-" + str(all_args.experiment_name) + "@" + str(all_args.user_name)
-    setproctitle.setproctitle(all_args.process_name)
+    setproctitle.setproctitle(
+        str(all_args.algorithm_name) + "-" + str(all_args.env_name) + "-" + str(all_args.experiment_name) + "@" + str(
+            all_args.user_name))
 
     # seed
     torch.manual_seed(all_args.seed)
     torch.cuda.manual_seed_all(all_args.seed)
     np.random.seed(all_args.seed)
 
-    # env init
+    # env
     envs = make_train_env(all_args)
     eval_envs = make_eval_env(all_args) if all_args.use_eval else None
     num_agents = all_args.num_agents
@@ -161,15 +141,14 @@ def main(args):
     }
 
     # run experiments
-    from onpolicy.runner.shared.ImIWoL_runner import MetaDriveRunner
-    runner = MetaDriveRunner(config)
-    try:
-        runner.run()
-    finally:
+    from onpolicy.runner.shared.robotarium_ImIWoL_runner import RobotariumRunner as Runner
+    runner = Runner(config)
+    runner.run()
+
     # post process
-        envs.close()
-        if all_args.use_eval and eval_envs is not envs:
-            eval_envs.close()
+    envs.close()
+    if all_args.use_eval and eval_envs is not None:
+        eval_envs.close()
 
     if all_args.use_wandb:
         run.finish()

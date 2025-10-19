@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from onpolicy.algorithms.r_mappo.algorithm.gat_comm import GAT_Comm
-from onpolicy.algorithms.r_mappo.algorithm.transformer_comm import Transformer_Comm
-from onpolicy.algorithms.r_mappo.algorithm.scheduler import Scheduler
+from onpolicy.algorithms.IWoL.algorithm.gat_comm import GAT_Comm
+from onpolicy.algorithms.IWoL.algorithm.transformer_comm import Transformer_Comm
+from onpolicy.algorithms.IWoL.algorithm.scheduler import Scheduler
 from onpolicy.algorithms.utils.util import init, check
 from onpolicy.algorithms.utils.cnn import CNNBase
 from onpolicy.algorithms.utils.mlp import MLPBase
