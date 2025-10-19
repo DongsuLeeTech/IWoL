@@ -1,10 +1,4 @@
-BiDexHands/assets/urdf/allegro_hand_model/meshes/40_10_link_g_r.stl filter=lfs diff=lfs merge=lfs -text
-BiDexHands/assets/urdf/allegro_hand_model/meshes/40_10_link_g_l.stl filter=lfs diff=lfs merge=lfs -text
-BiDexHands/assets/urdf/xarm_description/allegro_hand_model/meshes/40_10_link_g_r.stl filter=lfs diff=lfs merge=lfs -text
-BiDexHands/assets/urdf/xarm_description/allegro_hand_model/meshes/40_10_link_g_l.stl filter=lfs diff=lfs merge=lfs -text
-MQE/mqe/resources/robots/go1_old/meshes/trunk.dae filter=lfs diff=lfs merge=lfs -text
-MQE/mqe/utils/locomotion_checkpoints/walk_these_ways/ac_weights_last.pt filter=lfs diff=lfs merge=lfs -text
-MQE/resources/robots/go1_old/meshes/trunk.dae filter=lfs diff=lfs merge=lfs -text
+* text=auto eol=lf
 *.stl !text !filter !merge !diff
 *.dae !text !filter !merge !diff
 *.pt !text !filter !merge !diff
