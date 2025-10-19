@@ -1,6 +1,7 @@
 env_name: imiwol
 algorithm_name: imiwol
 experiment_name: check
+project_name: test
 run_dir: ./logs
 use_centralized_V: False
 use_obs_instead_of_state: False
