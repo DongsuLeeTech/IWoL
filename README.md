@@ -132,6 +132,11 @@ If you encounter issues with `RuntimeError: Ninja is required to load C++ extens
    pip install wandb gym etproctitle absl-py tensorboardX tensorflow imageio wandb[media] matplotlib cvxopt scipy seaborn psutil
    ```
 
+4. Train BiDexHands
+   ```bash
+   train.py --task=ShadowHandTwoCatchUnderarm --algo=imiwol --num_envs=250 --headless --compute_device_id 0 --sim_device cuda:0 --graphics_device_id 0
+   ```
+
 #### Trouble shooting
 If you encounter issues with `RuntimeError: Ninja is required to load C++ extension` not found, install it via conda:
    ```bash
