@@ -22,7 +22,7 @@ do
     --comm_type 1 --num_comm_hops 4 --comm_hidden_size 128 --comm_num_heads 4 \
     --pos_embed --obs_pos_embed_start 20 --obs_pos_embed_end 22 \
     --obs_info_scheduler rnn_enc --skip_connect_final --fixed_masked --mask_threshold 0.5 --use_scheduler \
-    --n_obs_head 1 --obs_enc_type rnn \
-    --wandb_project_name IWoL --user_name user_name
+    --n_obs_head 1 --obs_enc_type rnn --code_size 256 \
+    --wandb_project_name test --user_name user_name
 done
 
