@@ -32,6 +32,7 @@ def process_MultiAgentRL(args, env, config, model_dir=""):
                     config=config,
                     model_dir=model_dir
                     )
+    else:
         raise ValueError(f"Unsupported algorithm: {args.algo}")
 
     return marl
