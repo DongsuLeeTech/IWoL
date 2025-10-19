@@ -299,8 +299,27 @@ class FloatingCameraSensor(Sensor):
         self.env = env
 
         camera_props = gymapi.CameraProperties()
-        camera_props.width = self.env.cfg.env.recording_width_px
-        camera_props.height = self.env.cfg.env.recording_height_px
+        camera_props.width = int(getattr(self.env.cfg.env, "recording_width_px", 640))
+        camera_props.height = int(getattr(self.env.cfg.env, "recording_height_px", 480))
+        # Optionally honor horizontal FOV if provided in config
+        try:
+            fov = getattr(self.env.cfg.env, 'recording_horizontal_fov', None)
+            if fov is not None:
+                camera_props.horizontal_fov = float(fov)
+        except Exception:
+            pass
+        # Optionally honor near/far planes to reduce clipping in high top‑down views
+        try:
+            near = getattr(self.env.cfg.env, 'recording_near_plane', None)
+            far = getattr(self.env.cfg.env, 'recording_far_plane', None)
+            if near is not None:
+                camera_props.near_plane = float(near)
+            if far is not None:
+                camera_props.far_plane = float(far)
+        except Exception:
+            pass
+        self._width = camera_props.width
+        self._height = camera_props.height
         self.rendering_camera = self.env.gym.create_camera_sensor(self.env.envs[0], camera_props)
 
     def set_position(self, pos=None, lookat=None):
@@ -311,12 +330,80 @@ class FloatingCameraSensor(Sensor):
         self.env.gym.set_camera_location(self.rendering_camera, self.env.envs[0], gymapi.Vec3(*pos),
                                          gymapi.Vec3(*lookat))
 
+    def set_topdown_position(self, center=None, height=None, env_index: int = 0):
+        """Place camera above a world-space center and look straight down.
+
+        - center: Optional [x, y, z]. If None, uses the selected env origin or first root state.
+        - height: Optional absolute offset above center.z. If None, tries cfg.env.recording_topdown_height, else 8.0.
+        - env_index: Which vectorized env center to use when center is None.
+        """
+        # Derive sensible defaults
+        if height is None:
+            try:
+                height = float(getattr(self.env.cfg.env, 'recording_topdown_height', 8.0))
+            except Exception:
+                height = 8.0
+
+        if center is None:
+            try:
+                # Prefer env_origins if available
+                env_index = max(0, min(int(env_index), getattr(self.env, 'num_envs', 1) - 1))
+                if hasattr(self.env, 'env_origins') and self.env.env_origins is not None:
+                    cx, cy, cz = [float(x) for x in self.env.env_origins[env_index].tolist()]
+                elif hasattr(self.env, 'root_states') and self.env.root_states is not None:
+                    cx, cy, cz = float(self.env.root_states[0, 0]), float(self.env.root_states[0, 1]), float(self.env.root_states[0, 2])
+                else:
+                    cx, cy, cz = 0.0, 0.0, 0.0
+            except Exception:
+                cx, cy, cz = 0.0, 0.0, 0.0
+        else:
+            cx, cy, cz = center
+            cx, cy, cz = float(cx), float(cy), float(cz)
+
+        pos = [cx, cy, cz + float(height)]
+        lookat = [cx, cy, cz]
+        self.env.gym.set_camera_location(self.rendering_camera, self.env.envs[0], gymapi.Vec3(*pos), gymapi.Vec3(*lookat))
+
+
     def get_observation(self, env_ids=None):
+        import numpy as np
+        # Ensure simulation results are available before graphics step (important on GPU pipeline)
+        try:
+            if getattr(self.env, 'device', 'cpu') != 'cpu':
+                self.env.gym.fetch_results(self.env.sim, True)
+        except Exception:
+            pass
+        # Always refresh graphics before capturing camera images
         self.env.gym.step_graphics(self.env.sim)
         self.env.gym.render_all_camera_sensors(self.env.sim)
         img = self.env.gym.get_camera_image(self.env.sim, self.env.envs[0], self.rendering_camera, gymapi.IMAGE_COLOR)
-        w, h = img.shape
-        return img.reshape([w, h // 4, 4])
+        arr = np.asarray(img)
+        # Isaac Gym may return shape (H, W, 4), (W, H*4), (H, W*4) or flat. Handle robustly.
+        if arr.ndim == 3 and arr.shape[2] == 4:
+            # Already (H, W, 4)
+            return arr
+        total = arr.size
+        target = self._width * self._height * 4
+        if total == target:
+            # Could be flat; reshape to (H, W, 4)
+            try:
+                return arr.reshape(self._height, self._width, 4)
+            except Exception:
+                pass
+        # 2D forms
+        if arr.ndim == 2:
+            h, w = arr.shape
+            # form (H, W*4)
+            if h == self._height and w == self._width * 4:
+                return arr.reshape(self._height, self._width, 4)
+            # form (W, H*4)
+            if h == self._width and w == self._height * 4:
+                return arr.reshape(self._width, self._height, 4).transpose(1, 0, 2)
+        # Fallback: best effort to (H, W, 4)
+        try:
+            return arr.reshape(self._height, self._width, 4)
+        except Exception:
+            return arr
 
 
 class AttachedCameraSensor(Sensor):

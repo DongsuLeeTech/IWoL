@@ -30,6 +30,10 @@
 
 from mqe.envs.base.legged_robot_config import LeggedRobotCfg
 from mqe.envs.field.legged_robot_field_config import LeggedRobotFieldCfg
+from pathlib import Path
+
+# Resolve mqe package root directory (mqe/)
+_MQE_ROOT = Path(__file__).resolve().parents[2]
 
 class Go1Cfg(LeggedRobotFieldCfg):
 
@@ -125,7 +129,7 @@ class Go1Cfg(LeggedRobotFieldCfg):
         decimation = 4
         hip_scale_reduction = 0.5
 
-        locomotion_policy_dir = "~/DexterousHands/mqe/utils/locomotion_checkpoints/walk_these_ways"
+        locomotion_policy_dir = str((_MQE_ROOT / "utils" / "locomotion_checkpoints" / "walk_these_ways").resolve())
         actuator_network_path = "resources/actuator_nets"
 
         class default_command:

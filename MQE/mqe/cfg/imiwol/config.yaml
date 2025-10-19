@@ -1,6 +1,8 @@
 env_name: imiwol
 algorithm_name: imiwol
 experiment_name: check
+project_name: test
+
 run_dir: ./logs
 use_centralized_V: False
 use_obs_instead_of_state: False
@@ -16,9 +18,21 @@ use_single_network: False
 
 save_interval: 1
 use_eval: False
-eval_interval: 100
-log_interval: 50
+eval_interval: 1
+log_interval: 1
 eval_episodes: 10
+
+log_eval_video: True
+eval_video_debug: True
+eval_camera_mode: "fixed"
+eval_camera_topdown_height: 10.0
+eval_camera_horizontal_fov: 90.0
+eval_video_fps: 15
+eval_video_skip: 1
+eval_camera_env_index: 0
+eval_video_width_px: 1280
+eval_video_height_px: 720
+
 
 gamma: 0.96
 gae_lambda: 0.95

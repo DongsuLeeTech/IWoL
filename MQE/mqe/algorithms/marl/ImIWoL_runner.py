@@ -16,6 +16,7 @@ class ImIWoL_Runner:
         self.eval_envs = vec_env
         
         # parameters
+        self.project_name = config["project_name"]
         self.env_name = config['task']
         self.algorithm_name = config["algorithm_name"]
         self.experiment_name = config["experiment_name"]
@@ -30,7 +31,23 @@ class ImIWoL_Runner:
         self.use_render = config["use_render"]
         self.recurrent_N = config["recurrent_N"]
         self.latent_size = config["latent_size"]
-        
+        # video logging controls
+        self.log_eval_video = config.get("log_eval_video", False)
+        self.eval_video_fps = int(config.get("eval_video_fps", 15))
+        self.eval_video_skip = int(config.get("eval_video_skip", 1))
+        self.eval_camera_mode = config.get("eval_camera_mode", "follow")  # 'follow' | 'topdown' | 'fixed'
+        self.eval_camera_topdown_height = float(config.get("eval_camera_topdown_height", 8.0))
+        self.eval_camera_horizontal_fov = float(config.get("eval_camera_horizontal_fov", 90.0))
+        # optional resolution override for camera creation
+        self.eval_video_width_px = config.get("eval_video_width_px", None)
+        self.eval_video_height_px = config.get("eval_video_height_px", None)
+        self.eval_camera_env_index = int(config.get("eval_camera_env_index", 0))
+        # fixed camera pose (optional)
+        self.eval_camera_fixed_pos = config.get("eval_camera_fixed_pos", None)
+        self.eval_camera_fixed_lookat = config.get("eval_camera_fixed_lookat", None)
+        # debug flag
+        self.eval_video_debug = bool(config.get("eval_video_debug", False))
+
         # interval
         self.save_interval = config["save_interval"]
         self.use_eval = config["use_eval"]
@@ -56,7 +73,7 @@ class ImIWoL_Runner:
 
         # Initialize wandb
         wandb.init(
-            project=f"quadruped",
+            project=f"{self.project_name}",
             name=f"{self.algorithm_name}_seed{self.seed}",
             config={
                 "algorithm": self.algorithm_name,
@@ -87,7 +104,7 @@ class ImIWoL_Runner:
 
         # algorithm
         self.trainer = ImIWoL_Trainer(config, self.policy, device=self.device)
-        
+
         # buffer
         self.buffer = SharedReplayBuffer(config,
                                        self.num_agents,
@@ -277,7 +294,44 @@ class ImIWoL_Runner:
 
     @torch.no_grad()
     def eval(self, total_num_steps):
-        desired_episodes = self.n_eval_rollout_threads
+        # Prepare video capture via MQE env camera (first env only)
+        env_for_video = getattr(self.eval_envs, 'env', None)
+        video_ready = False
+        collected_frames = []
+        camera_pose_initialized = False
+
+        if self.log_eval_video and env_for_video is not None:
+            # Warn if simulation camera is disabled at config level
+            try:
+                if getattr(env_for_video.cfg.sim, 'no_camera', False):
+                    print('Warning: cfg.sim.no_camera is True; camera sensors may render black frames.')
+                    try:
+                        env_for_video.cfg.sim.no_camera = False
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            try:
+                # Ensure a floating camera exists to capture frames headlessly
+                if not hasattr(env_for_video, 'rendering_camera'):
+                    # Set desired FOV before creating the camera (helper will honor it)
+                    try:
+                        setattr(env_for_video.cfg.env, 'recording_horizontal_fov', self.eval_camera_horizontal_fov)
+                        if self.eval_video_width_px is not None:
+                            setattr(env_for_video.cfg.env, 'recording_width_px', int(self.eval_video_width_px))
+                        if self.eval_video_height_px is not None:
+                            setattr(env_for_video.cfg.env, 'recording_height_px', int(self.eval_video_height_px))
+                    except Exception:
+                        pass
+                    from mqe.utils.helpers import FloatingCameraSensor
+                    env_for_video.rendering_camera = FloatingCameraSensor(env_for_video)
+                video_ready = True
+            except Exception:
+                video_ready = False
+
+        # Camera ready for video capture if available
+
+        desired_episodes = int(self.eval_episodes)
         eval_total_episodes = 0
         episode_rewards = torch.zeros(
             self.n_eval_rollout_threads, self.num_agents, device=self.device
@@ -294,6 +348,12 @@ class ImIWoL_Runner:
         )
         masks = torch.ones(self.n_eval_rollout_threads, self.num_agents, 1, device=self.device)
 
+        step_index = 0
+        video_episode_done = False
+        blank_frame_count = 0
+        fallback_to_follow = False
+        debug_frame_logged = False
+        camera_pose_initialized = False
         while eval_total_episodes < desired_episodes:
             self.trainer.prep_rollout()
             actions, rnn_states = self.trainer.policy.act(obs.reshape(self.n_rollout_threads * self.num_agents, -1),
@@ -306,6 +366,80 @@ class ImIWoL_Runner:
                 actions = actions.reshape(self.n_rollout_threads, self.num_agents, -1)
 
             obs, rewards, dones, infos = self.eval_envs.step(actions.to(self.device))
+
+            # Capture a frame for video if camera is available
+            if video_ready and (self.eval_video_skip <= 1 or (step_index % self.eval_video_skip == 0)) and (not video_episode_done):
+                try:
+                    # Position camera (fixed/topdown/follow). Allow fallback to follow on blanks.
+                    cam_mode = 'follow' if fallback_to_follow else self.eval_camera_mode
+                    if cam_mode == 'fixed':
+                        if not camera_pose_initialized:
+                            try:
+                                # prefer explicit pos/lookat; otherwise use viewer defaults
+                                pos = self.eval_camera_fixed_pos
+                                lookat = self.eval_camera_fixed_lookat
+                                if pos is None:
+                                    pos = getattr(getattr(env_for_video, 'cfg', None), 'viewer', None)
+                                    pos = getattr(pos, 'pos', None) if pos is not None else None
+                                if lookat is None:
+                                    v = getattr(getattr(env_for_video, 'cfg', None), 'viewer', None)
+                                    lookat = getattr(v, 'lookat', None) if v is not None else None
+                                if pos is None:
+                                    pos = [2.0, 2.0, 2.0]
+                                if lookat is None:
+                                    lookat = [0.0, 0.0, 0.0]
+                                env_for_video.rendering_camera.set_position(pos, lookat)
+                            except Exception:
+                                pass
+                            camera_pose_initialized = True
+                    elif cam_mode == 'topdown':
+                        try:
+                            env_for_video.rendering_camera.set_topdown_position(
+                                center=None,
+                                height=self.eval_camera_topdown_height,
+                                env_index=self.eval_camera_env_index,
+                            )
+                        except Exception:
+                            env_for_video.rendering_camera.set_position()
+                    else:
+                        env_for_video.rendering_camera.set_position()
+                    frame = env_for_video.rendering_camera.get_observation()
+                    frame = np.asarray(frame)
+                    # Remove alpha if present and ensure uint8
+                    if frame.shape[-1] > 3:
+                        frame = frame[..., :3]
+                    if frame.dtype != np.uint8:
+                        frame = frame.astype(np.uint8)
+                    # One-time debug dump
+                    if self.eval_video_debug and (not debug_frame_logged):
+                        try:
+                            stats = {
+                                'shape': tuple(frame.shape),
+                                'dtype': str(frame.dtype),
+                                'min': int(frame.min()) if frame.size else -1,
+                                'max': int(frame.max()) if frame.size else -1,
+                                'mean': float(frame.mean()) if frame.size else 0.0,
+                                'nonzero_ratio': float((frame>0).sum())/float(frame.size) if frame.size else 0.0,
+                                'mode': cam_mode,
+                                'env_index': int(self.eval_camera_env_index),
+                                'height': float(self.eval_camera_topdown_height),
+                                'fov': float(self.eval_camera_horizontal_fov),
+                            }
+                            wandb.log({'eval/debug_frame': wandb.Image(frame), 'eval/debug_stats': stats}, step=total_num_steps)
+                            debug_frame_logged = True
+                        except Exception:
+                            pass
+
+                    # Blank/near‑blank detection
+                    if frame.max() == 0 or (frame.mean() < 1.0):
+                        blank_frame_count += 1
+                        # After a few blank frames in topdown mode, fallback to follow
+                        if (cam_mode == 'topdown') and blank_frame_count >= 3:
+                            fallback_to_follow = True
+                    collected_frames.append(frame)
+                except Exception:
+                    pass
+            step_index += 1
 
             # Convert numpy arrays to tensors
             if isinstance(obs, np.ndarray):
@@ -329,12 +463,32 @@ class ImIWoL_Runner:
                 rnn_states[finished_ids].zero_()
                 episode_rewards[finished_ids].zero_()
 
+                # stop collecting video frames after the first episode of env 0 completes
+                if video_ready and 0 in finished_ids.tolist() and (not video_episode_done):
+                    video_episode_done = True
+
         eval_episode_rewards = torch.stack(eval_episode_rewards)  # (Episodes, n_agents)
         mean_r = eval_episode_rewards.mean()
         max_r = eval_episode_rewards.max()
 
         success_count = self.eval_envs.reward_buffer.get("success count", 0)
         success_rate = success_count / max(1, eval_total_episodes)
+
+        # Package collected frames into a WandB video
+        if video_ready and len(collected_frames) > 0:
+            try:
+                frames_np = np.stack([np.asarray(f) for f in collected_frames], axis=0)  # (T, H, W, C)
+                # If frames look blank, warn to check graphics/camera init
+                if frames_np.max() <= 1 and frames_np.dtype != np.uint8:
+                    pass
+                elif frames_np.max() == 0:
+                    print("Warning: Captured frames are all zeros. Check graphics context and camera setup.")
+                video_tensor = frames_np.transpose(0, 3, 1, 2)  # (T, C, H, W)
+                video = wandb.Video(video_tensor, fps=self.eval_video_fps, format='mp4')
+            except Exception:
+                video = None
+        else:
+            video = None
 
         info = dict(
             eval_average_episode_rewards=mean_r,
@@ -343,5 +497,7 @@ class ImIWoL_Runner:
             eval_success_count=success_count,
             eval_total_episodes=eval_total_episodes,
         )
+        if video is not None:
+            info['eval/rendering'] = video
         print(f"[Eval] {info}")
         self.log_env(info, total_num_steps)

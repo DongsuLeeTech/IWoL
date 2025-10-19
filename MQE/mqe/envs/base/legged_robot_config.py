@@ -213,7 +213,7 @@ class LeggedRobotCfg(BaseConfig):
         substeps = 1
         gravity = [0., 0. ,-9.81]  # [m/s^2]
         up_axis = 1  # 0 is y, 1 is z
-        no_camera = True
+        no_camera = False  # enable camera sensors for headless video capture
 
         class physx:
             num_threads = 10

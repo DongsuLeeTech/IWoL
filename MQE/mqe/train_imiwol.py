@@ -30,6 +30,9 @@ def main():
     # Update config with command line arguments
     if args.num_envs is not None:
         config["n_rollout_threads"] = args.num_envs
+    # Keep env.num_envs in sync with rollout threads if not explicitly provided
+    if args.num_envs is None and "n_rollout_threads" in config:
+        args.num_envs = config["n_rollout_threads"]
     if args.max_iterations is not None:
         config["num_env_steps"] = args.max_iterations * config["episode_length"] * config["n_rollout_threads"]
 
