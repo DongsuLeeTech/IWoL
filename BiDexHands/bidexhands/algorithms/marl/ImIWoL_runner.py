@@ -18,6 +18,7 @@ class ImIWoL_Runner:
         self.eval_envs = vec_env
 
         # parameters
+        self.project_name = config["project_name"]
         config['episode_length'] = vec_env.task.cfg["env"]["episodeLength"]
         self.env_name = vec_env.task.cfg["env"]["env_name"]
         self.algorithm_name = config["algorithm_name"]
@@ -59,7 +60,7 @@ class ImIWoL_Runner:
 
         # Initialize wandb
         wandb.init(
-            project=f"dexterousHands",
+            project=f"{self.project_name}",
             name=f"{self.algorithm_name}_seed{self.seed}",
             config={
                 "algorithm": self.algorithm_name,
