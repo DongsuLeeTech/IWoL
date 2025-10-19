@@ -684,9 +684,9 @@ class ShadowHandDoorOpenOutward(BaseTask):
 
             # The direct average shows the overall result more quickly, but slightly undershoots long term
             # policy performance.
-            print("Direct average consecutive successes = {:.1f}".format(direct_average_successes/(self.total_resets + self.num_envs)))
-            if self.total_resets > 0:
-                print("Post-Reset average consecutive successes = {:.1f}".format(self.total_successes/self.total_resets))
+            # print("Direct average consecutive successes = {:.1f}".format(direct_average_successes/(self.total_resets + self.num_envs)))
+            # if self.total_resets > 0:
+                # print("Post-Reset average consecutive successes = {:.1f}".format(self.total_successes/self.total_resets))
 
     def compute_observations(self):
         """
