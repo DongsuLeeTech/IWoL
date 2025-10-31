@@ -14,7 +14,7 @@
    conda activate [your env name]
    ```
 
-2. MetaDrive installation (Metadrive github repository version: )
+2. MetaDrive installation (Metadrive version: https://drive.google.com/file/d/13XeZ2h9h9g-To3phFurFBmADHujnkvIT/view?usp=sharing)
    ```bash
    cd ~/
    git clone https://github.com/metadriverse/metadrive.git
