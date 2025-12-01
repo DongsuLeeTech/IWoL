@@ -1,6 +1,6 @@
 # IWoL
 
-**Interactive World Latent Representation Learning Framework**, NeurIPS 2025 ARLET Workshop.
+**Interaction-World Latent Representation Learning Framework**, NeurIPS 2025 ARLET Workshop (ORAL).
 
 ---
 
