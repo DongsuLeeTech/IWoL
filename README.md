@@ -1,7 +1,5 @@
 # IWoL
 
-NeurIPS 2025 ARLET Workshop Oral
-
 ---
 
 ### Metadrive
